@@ -51,7 +51,7 @@ def login(s: requests.Session, username, password):
         "username": username,
         "password": password
     }
-    r = s.post("https://app.ucas.ac.cn/uc/wap/login", data=payload)
+    r = s.post("https://app.ucas.ac.cn/uc/wap/login/check", data=payload)
 
     # print(r.text)
     if r.json().get('m') != "操作成功":
@@ -64,7 +64,7 @@ def login(s: requests.Session, username, password):
 
 def get_daily(s: requests.Session):
     daily = s.get("https://app.ucas.ac.cn/site/dailyReport/reportAll?appid=4")
-    # info = s.get("https://app.ucas.ac.cn/ncov/api/default/index?xgh=0&app_id=ucas")
+    # info = s.get("https://app.ucas.ac.cn/ncov/api/default/daily?xgh=0&app_id=ucas")
     j = daily.json()
     d = j.get('d', None)
     if d:
@@ -119,7 +119,15 @@ def submit(s: requests.Session, old: dict):
         'jrsfdgzgfxdq': old['jrsfdgzgfxdq'],  # add @2020.9.16
         'jrsflj': old['jrsflj'],  # add @2020.9.16
         'app_id': 'ucas'}
-
+    
+    if new_daily['szdd'] != '国内':
+        msg = "所在地点不是国内，请手动打卡"
+        if api_key != "":
+            message(api_key, msg, new_daily)
+        if sender_email != "" and receiver_email != "":
+            send_email(sender_email, sender_email_passwd, receiver_email, msg, new_daily)
+        return
+    
     r = s.post("https://app.ucas.ac.cn/ncov/api/default/save", data=new_daily)
 
     if debug:
